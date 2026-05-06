@@ -41,7 +41,7 @@ class TxtGenerator
                 /* 03 */ '0',
                 /* 04 */ '0',
                 /* 05 */ (string) $line['bonif_qty'],                          // bonif quantity merged from bonif line
-                /* 06 */ $line['cantidad'],                                    // InvoicedQuantity
+                /* 06 */ $this->fmt($line['cantidad']),                        // InvoicedQuantity
                 /* 07 */ '0',
                 /* 08 */ $this->fmt((float)$line['precio_con_igv'] / 1.18),    // PRECIO SIN IGV   // reference price sin IGV
                 /* 09 */ $this->fmt($line['precio_con_igv']),                  // PRECIO  CON IGV  // reference price con IGV (AlternativeConditionPrice)
