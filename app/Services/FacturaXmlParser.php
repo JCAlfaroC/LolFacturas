@@ -13,15 +13,16 @@ class FacturaXmlParser
 
     public function parse(string $xmlContent): array
     {
-        // SimpleXMLElement convert the raw XML text into an object
-        // we can navigate like $xml->children()=>ID
-        // Without this, the XML is just a plain string we can't query
-        $this->xml = new \SimpleXMLElement($xmlContent);
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($xmlContent, \SimpleXMLElement::class, LIBXML_NOERROR | LIBXML_NOWARNING);
+        libxml_clear_errors();
 
-        // We split the work into two methods:
-        // =parseHeader() handles document-level data (dates, RUCs, totals)
-        // -parseLines() handles each product line inside the invoice
-        // keeping them separate makes it easier to debug and modify later
+        if ($xml === false) {
+            throw new \RuntimeException('No se pudo parsear el XML. Verifique que el archivo sea válido.');
+        }
+
+        $this->xml = $xml;
+
         return [
             'header' => $this->parseHeader(),
             'lines'  => $this->parseLines(),
