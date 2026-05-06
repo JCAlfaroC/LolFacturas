@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('productos', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo_producto')->unique();
-            $table->string('nombre');
-            $table->foreignId('proveedor_id')->constrained('proveedores');
+            $table->string('gtin', 20);
+            $table->foreignId('codigo_producto', 20);
             $table->timestamps();
         });
     }

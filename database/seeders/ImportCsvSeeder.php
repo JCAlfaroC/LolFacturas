@@ -43,7 +43,7 @@ class ImportCsvSeeder extends Seeder
 
         while (($row = fgetcsv($file)) !== false) {
             $batch[] = [
-                'GTIN'            => trim($row[0]),
+                'gtin'            => trim($row[0]),
                 'codigo_producto' => trim($row[1]),
                 'created_at'      => now(),
                 'updated_at'      => now(),

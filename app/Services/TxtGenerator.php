@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use Illuminate\Support\Facades\DB;
 
 class TxtGenerator
 {
@@ -30,11 +31,12 @@ class TxtGenerator
 
         $orderNum = $this->readCounter();
 
+        $codigoProveedor = $this->resolveProveedorCode($header['nom_emisor']);
         $rows = [];
         foreach ($lines as $line) {
             $cols = [
                 /* 01 */ (string) $orderNum,                                   // sequential order ID (persisted counter)
-                /* 02 */ $this->resolveInternalCode($line['descripcion']),       // cod_producto      (LolFar internal code resolved from description)
+                /* 02 */ $this->resolveProductCode($line['codigo']),        // cod_producto      (LolFar internal code resolved from GTIN)
                 /* 02 */ // $line['codigo'],  // PRODUCTOS INFORMACION COMPLETAR                                       // cod_producto      (seller's item code from XML)
                 /* 03 */ '0',
                 /* 04 */ '0',
@@ -66,7 +68,7 @@ class TxtGenerator
                 /* 30 */ '0',
                 /* 31 */ '',
                 /* 32 */ '',
-                /* 33 */ 'MM',                                                   // cod_proveedor     (LolFar internal — e.g. 'MM')
+                /* 33 */ $codigoProveedor,                                                   // cod_proveedor     (LolFar internal — e.g. 'MM')
                 /* 34 */ '0',
                 /* 35 */ '0',
                 /* 36 */ $header['moneda'],                                    // currency: SO=soles, US=dollars (DocumentCurrencyCode)
@@ -132,18 +134,18 @@ class TxtGenerator
         file_put_contents(storage_path('app/order_counter.txt'), $value);
     }
 
-    private function resolveInternalCode(string $descripcion): string
+    private function resolveProductCode(string $gtin): string
     {
-        $map = [
-            'FOT EXTREM CREAM SPF 90 X 50G'   => '86048',
-            'FOT F/WAT OIL/C C/ LIGHT X50ML'  => '97155',
-            'LIPSTICK REP LAB X 4G'            => '96145',
-            'FLAVO C SERUM REJUVENATE 30ML'    => '97156',
-            'LAMBDAPIL SH ANTICAIDA 200'       => '93493',
-            'UREADIN ULTRA 10 LOCI 200'        => '90379',
-        ];
+        return DB::table('productos')
+            ->where('gtin', trim($gtin))
+            ->value('codigo_producto') ?? '';
+    }
 
-        return $map[trim($descripcion)] ?? '93222';
+    private function resolveProveedorCode(string $nombre): string
+    {
+        return DB::table('proveedores')
+            ->whereRaw('LOWER(nombre) = ?', [strtolower(trim($nombre))])
+            ->value('codigo_proveedor') ?? '';
     }
 
     private function fmt(mixed $value): string
