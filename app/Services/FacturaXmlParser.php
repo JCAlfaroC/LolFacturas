@@ -77,8 +77,8 @@ class FacturaXmlParser
                         ->children($this->ns['cac'])->Party;
         $rucEmisor  = (string) $supplier->children($this->ns['cac'])->PartyIdentification
                         ->children($this->ns['cbc'])->ID;
-        $nomEmisor  = (string) $supplier->children($this->ns['cac'])->PartyName
-                        ->children($this->ns['cbc'])->Name;
+        $nomEmisor  = (string) $supplier->children($this->ns['cac'])->PartyLegalEntity
+                        ->children($this->ns['cbc'])->RegistrationName;
         
         // Document currency: PEN (soles) → SO, USD → US
         $currencyCode = (string) $x->children($this->ns['cbc'])->DocumentCurrencyCode;
@@ -151,6 +151,9 @@ class FacturaXmlParser
             $descripcion = (string) $item->children($this->ns['cbc'])->Description;
             $codigo     = (string) $item->children($this->ns['cac'])->SellersItemIdentification
                             ->children($this->ns['cbc'])->ID;
+            // GTIN-13 barcode — present in some suppliers (e.g. Alfaro) via StandardItemIdentification
+            $sii  = $item->children($this->ns['cac'])->StandardItemIdentification;
+            $gtin = $sii->count() ? (string) $sii->children($this->ns['cbc'])->ID : '';
 
             // Unit proce WITHOUT IGV
             $precioUnit = (string) $line->children($this->ns['cac'])->Price
@@ -175,7 +178,8 @@ class FacturaXmlParser
 
             $lines[] = [
                 'nro'               => $nro,
-                'codigo'            => trim($codigo), 
+                'codigo'            => trim($codigo),
+                'gtin'              => trim($gtin),
                 'descripcion'       => trim($descripcion),
                 'cantidad'          => $cantidad,
                 'unidad'            => $unidad,

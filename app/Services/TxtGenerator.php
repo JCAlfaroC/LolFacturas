@@ -36,8 +36,7 @@ class TxtGenerator
         foreach ($lines as $line) {
             $cols = [
                 /* 01 */ (string) $orderNum,                                   // sequential order ID (persisted counter)
-                /* 02 */ $this->resolveProductCode($line['codigo']),        // cod_producto      (LolFar internal code resolved from GTIN)
-                /* 02 */ // $line['codigo'],  // PRODUCTOS INFORMACION COMPLETAR                                       // cod_producto      (seller's item code from XML)
+                /* 02 */ $this->resolveProductCode($line['gtin'], $line['codigo']), // cod_producto (tries GTIN-13 first, then seller code)
                 /* 03 */ '0',
                 /* 04 */ '0',
                 /* 05 */ (string) $line['bonif_qty'],                          // bonif quantity merged from bonif line
@@ -52,7 +51,7 @@ class TxtGenerator
                 /* 14 */ '0',
                 /* 15 */ '',
                 /* 16 */ $this->fmt($line['val_venta']),                        // LineExtensionAmount (subtotal sin IGV)
-                /* 17 */ $this->fmt((float)$line['val_venta'] - ((float)$line['precio_con_igv'] / 1.18) * (float)$line['cantidad']),
+                /* 17 */ $this->fmt(round((float)$line['val_venta'] - ((float)$line['precio_con_igv'] / 1.18) * (float)$line['cantidad'], 2)),
                 /* 18 */ (string) $orderNum,                                   // same sequential ID as col01
                 /* 19 */ 'A2',                                                   // cod_zona          (LolFar internal)
                 /* 20 */ 'CC',                                                   // codigo de tipo de movimiento Cargo Por Compra CC,                                                    // cod_tipo          (LolFar internal)
@@ -134,11 +133,17 @@ class TxtGenerator
         file_put_contents(storage_path('app/order_counter.txt'), $value);
     }
 
-    private function resolveProductCode(string $gtin): string
+    private function resolveProductCode(string $gtin, string $sellerCode): string
     {
-        return DB::table('productos')
-            ->where('gtin', trim($gtin))
-            ->value('codigo_producto') ?? '';
+        if ($gtin !== '') {
+            $result = DB::table('productos')->where('gtin', $gtin)->value('codigo_producto');
+            if ($result !== null) return $result;
+        }
+        if ($sellerCode !== '') {
+            $result = DB::table('productos')->where('codigo_proveedor_item', $sellerCode)->value('codigo_producto');
+            if ($result !== null) return $result;
+        }
+        return '';
     }
 
     private function resolveProveedorCode(string $nombre): string
